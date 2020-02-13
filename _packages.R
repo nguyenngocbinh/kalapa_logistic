@@ -8,6 +8,6 @@ if (length(to.install) > 0) install.packages(to.install)
 #-----------------------------------------------------------------------------
 # require packages
 pkgs <- c("inspectdf", "readr", "dplyr", "data.table", "tidyr", "magrittr", "drake", "scorecard",
-          "rsample", "broom", "R.utils", "pROC", "ROCR", "purrr", "tibble")
+          "rsample", "broom", "R.utils", "pROC", "ROCR", "purrr", "tibble", "mice")
 lapply(pkgs, function(pk) require(pk, character.only = TRUE))
 

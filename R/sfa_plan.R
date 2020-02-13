@@ -100,7 +100,7 @@ woe_cal <- function(x, y, valueOfBad = 1) {
 #' data('hmeq')
 #' woe_cal_quantiles(x = hmeq$loan, y = hmeq$bad)
 
-woe_cal_quantiles <- function(x, y, valueOfBad = 1, nbr_bin = 20) {
+woe_cal_quantiles <- function(x, y, valueOfBad = 1, nbr_bin = 15) {
   if (is.numeric(y) == FALSE) {
     stop("y should be a numeric variable (0,1)", "\n")
   }
@@ -353,7 +353,7 @@ get_ks <- function(x, y) {
 #'            var_skip = 'loan',
 #'            return_rm_reason = TRUE )
 
-filter_sfa <- function(df, y, x_list = NULL, missing_limit = 0.95, iv_limit = 0.01, auc_limit = 0.5, ks_limit = 0.1,
+filter_sfa <- function(df, y, x_list = NULL, missing_limit = 0.95, iv_limit = 0.01, auc_limit = 0.6, ks_limit = 0.08,
                        identical_limit = 0.95, var_skip = NULL, return_rm_reason = TRUE) {
   # Check x_list status
   if (is.null(x_list)) {
@@ -397,7 +397,7 @@ filter_sfa <- function(df, y, x_list = NULL, missing_limit = 0.95, iv_limit = 0.
 sfa_plan = drake_plan(
   df_gb = dt_woe_regr %>% filter(id  %in% 0:29999),
   df_pred = dt_woe_regr %>% filter(id  %in% 30000:49999),
-  df_split = df_gb %>% initial_split(strata = "label"),
+  df_split = df_gb %>% initial_split(prop = 2/3, strata = "label"),
   df_train = training(df_split),
   df_test = testing(df_split),
   table_bins = bins %>% map_dfr(rbind),

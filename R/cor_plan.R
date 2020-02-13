@@ -5,7 +5,7 @@ filter_cor <- function(dt,
                        cutoff = 0.6,
                        var_skip = NULL) {
   # x variable names
-  x = x_variable(dt,y,x)
+  x = x_variable(dt, y, x)
 
   dt = setDT(copy(dt)) # copy(setDT(dt))
 
@@ -36,6 +36,6 @@ cor_plan = drake_plan(
   df_cor = filter_cor(dt = df_sfa,
                       y = "label",
                       method = "pearson",
-                      cutoff = 0.7,)
+                      cutoff = 0.75,)
 
 )

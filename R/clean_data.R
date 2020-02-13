@@ -210,12 +210,12 @@ f_clean_data <- function(df, logical_vars, character_vars){
     mutate_if(is.logical, as.character)
 
   df_non_na <- df %>%
-    filter(FIELD_9 != "MISSING" | is.na(FIELD_9)) %>%
-    mutate_if(is.character, replace_na, "RANDOM MISSING")
+    filter(FIELD_9 != "MISSING" | is.na(FIELD_9)) #%>%
+   # mutate_if(is.character, replace_na, "RANDOM MISSING")
 
   df_na <- df %>%
     filter(FIELD_9 == "MISSING") %>%
-    mutate_if(is.character, replace_na, "MISSING")
+    mutate_if(is.character, tidyr::replace_na, "MISSING")
 
   cleaned_df <- df_non_na %>%
     bind_rows(df_na) %>%
@@ -274,12 +274,17 @@ clean_plan = drake_plan(
                      "FIELD_35",
                      "FIELD_39", "FIELD_40", "FIELD_41", "FIELD_42", "FIELD_43", "FIELD_44", "FIELD_45"),
 
-  new_character_vars = character_vars %>% setdiff(c("FIELD_11", "FIELD_12", "FIELD_40", "FIELD_45")),
+  new_character_vars = character_vars %>% setdiff(c("FIELD_11", "FIELD_12", "FIELD_40", "FIELD_45",
+                                                    "district", "FIELD_7")),
   new_numeric_vars = c(numeric_vars, "FIELD_11", "FIELD_40", "FIELD_45") %>% setdiff(c("age_source1", "age_source2")),
   new_logical_vars = c(logical_vars, "FIELD_12"),
 
-  cleaned_dt = f_clean_data(dset, logical_vars, character_vars),
-  bins = scorecard::woebin(cleaned_dt, y = "label", var_skip = c("id"), bin_num_limit = 8, check_cate_num = FALSE),
+  cleaned_df = f_clean_data(dset, logical_vars, character_vars),
+  imp = mice(cleaned_df, m = 5, meth = 'cart', minbucket = 4, seed = 1911, maxit = 1),
+  cleaned_dt = complete(imp),
+  
+  # bins = scorecard::woebin(cleaned_dt, y = "label", var_skip = c("id"), bin_num_limit = 10, check_cate_num = FALSE),
+  bins = scorecard::woebin(cleaned_dt, y = "label", x = new_character_vars, var_skip = c("id"), bin_num_limit = 10, check_cate_num = FALSE),
   bins_numeric = scorecard::woebin(cleaned_dt, y = "label", x = new_numeric_vars, var_skip = c("id"), bin_num_limit = 8, check_cate_num = FALSE),
 
   dt_woe_regr = target({

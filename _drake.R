@@ -15,6 +15,9 @@ plan = bind_plans(clean_plan, sfa_plan , cor_plan , mfa_plan, predict_plan)
 make(plan)
 
 readd(logit_perf_auc)
+readd(table_single_analysis)$tbl_sfa -> tbl_sfa
+readd(df_cor) -> dx_cor
+readd(final_model)
 
 # Set the config ---------------------------------------------------------------
 
