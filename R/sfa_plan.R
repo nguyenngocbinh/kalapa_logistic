@@ -353,7 +353,7 @@ get_ks <- function(x, y) {
 #'            var_skip = 'loan',
 #'            return_rm_reason = TRUE )
 
-filter_sfa <- function(df, y, x_list = NULL, missing_limit = 0.95, iv_limit = 0.01, auc_limit = 0.6, ks_limit = 0.08,
+filter_sfa <- function(df, y, x_list = NULL, missing_limit = 0.95, iv_limit = 0.01, auc_limit = 0.5, ks_limit = 0.08,
                        identical_limit = 0.95, var_skip = NULL, return_rm_reason = TRUE) {
   # Check x_list status
   if (is.null(x_list)) {
@@ -395,14 +395,14 @@ filter_sfa <- function(df, y, x_list = NULL, missing_limit = 0.95, iv_limit = 0.
 #=============================================================================
 
 sfa_plan = drake_plan(
-  df_gb = dt_woe_regr %>% filter(id  %in% 0:29999),
-  df_pred = dt_woe_regr %>% filter(id  %in% 30000:49999),
+  df_gb = dt_final %>% filter(id  %in% 0:29999),
+  df_pred = dt_final %>% filter(id  %in% 30000:49999),
   df_split = df_gb %>% initial_split(prop = 2/3, strata = "label"),
   df_train = training(df_split),
   df_test = testing(df_split),
   table_bins = bins %>% map_dfr(rbind),
   # vars_sfa_1 = df_train %>% names() %>% setdiff(c('id', 'label')) %>% sort(),
-  table_single_analysis = df_train %>% filter_sfa("label", var_skip = "id"),
+  table_single_analysis = df_train %>% filter_sfa("label", var_skip = c("id", "new_id")),
   df_sfa = table_single_analysis$df_pass,
   vars_sfa_remain = df_sfa %>% names()
 )
