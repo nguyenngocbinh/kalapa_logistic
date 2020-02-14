@@ -182,6 +182,7 @@ filter_mfa_stepwise <- function(df,
 mfa_plan = drake_plan(
   mfa_result = filter_mfa_stepwise(df_cor, y = "label"),
   final_model = mfa_result$fit,
+  final_formula = mfa_result$fit$formula,
   mfa_auc = mfa_result$auc,
   mfa_pred = predict(final_model, df_test, type = 'response'),
   logit_scores = prediction(mfa_pred, df_test$label),
