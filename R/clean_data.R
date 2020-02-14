@@ -165,7 +165,7 @@ f_recode_macv <- function(st){
                          st %>% str_detect('GIAM SAT') ~ 'GIAM SAT',
                          st %>% str_detect('GIA?M SA?T') ~ 'GIAM SAT',
                          st %>% str_detect('KIEM SOAT') ~ 'KIEM SOAT',
-                         # st %>% str_detect("[:digit:]") ~ NA_character_,
+                         st %>% str_detect("[:digit:]") ~ NA_character_,
                          st %>% str_detect('UNDEFINED') ~ NA_character_,
                          TRUE ~ as.character(st)
 
@@ -280,25 +280,31 @@ clean_plan = drake_plan(
   new_logical_vars = c(logical_vars, "FIELD_12"),
 
   cleaned_df = f_clean_data(dset, logical_vars, character_vars),
-  imp = mice(cleaned_df, m = 5, meth = 'cart', minbucket = 4, seed = 1911, maxit = 1),
-  cleaned_dt = complete(imp),
-  
-  # bins = scorecard::woebin(cleaned_dt, y = "label", var_skip = c("id"), bin_num_limit = 10, check_cate_num = FALSE),
-  bins = scorecard::woebin(cleaned_dt, y = "label", x = new_character_vars, var_skip = c("id"), bin_num_limit = 10, check_cate_num = FALSE),
-  bins_numeric = scorecard::woebin(cleaned_dt, y = "label", x = new_numeric_vars, var_skip = c("id"), bin_num_limit = 8, check_cate_num = FALSE),
+  df_newid = cleaned_df %>%
+    group_by_at(c(new_character_vars, new_numeric_vars, new_logical_vars, "AGE", "label")) %>%
+    mutate(new_id = list(id)) %>%
+    mutate(new_id = as.character(new_id)),
+  grp_df = df_newid %>%
+    select(-id) %>%
+    group_by_all() %>%
+    summarise(case_weight = 1/n()),
+  # cleaned_dt = f_clean_data(dset, logical_vars, character_vars),
+  imp = mice(grp_df, m = 1, meth = 'cart', minbucket = 4, seed = 1911, maxit = 1),
+  df_imp = complete(imp),
+
+  bins = scorecard::woebin(df_imp, y = "label", var_skip = c("new_id"), bin_num_limit = 10, check_cate_num = FALSE),
+  #bins = scorecard::woebin(df_imp, y = "label", x = new_character_vars, var_skip = "new_id", bin_num_limit = 10, check_cate_num = FALSE),
+  bins_numeric = scorecard::woebin(df_imp, y = "label", x = new_numeric_vars, var_skip = "new_id", bin_num_limit = 8, check_cate_num = FALSE),
 
   dt_woe_regr = target({
-    dt_woe = scorecard::woebin_ply(cleaned_dt, bins = bins, to = "woe")
+    dt_woe = scorecard::woebin_ply(df_imp, bins = bins, to = "woe")
     return(dt_woe)
     }),
-  dt_woe_classif = target({
-    dt_woe = scorecard::woebin_ply(cleaned_dt, bins = bins, to = "woe")
-    dt_woe$label = as.factor(if_else(dt_woe$label == 1, "bad", "good", missing = NULL))
-    return(dt_woe)
-  }),
-  dt_bin = scorecard::woebin_ply(cleaned_dt, bins = bins, to = "bin"),
+  dt_bin = scorecard::woebin_ply(df_imp, bins = bins, to = "bin"),
 
-  dt_woe_cat = scorecard::woebin_ply(cleaned_dt, bins = bins_numeric, to = "woe"),
-  dt_bin_cat = scorecard::woebin_ply(cleaned_dt, bins = bins_numeric, to = "bin")
+  dt_final = df_newid %>%
+    ungroup() %>%
+    dplyr::select(id, new_id) %>%
+    left_join(dt_woe_regr, by = "new_id")
 
 )
